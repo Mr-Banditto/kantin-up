@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role', // PASTIKAN ADA INI
+        'balance',
         ];
 
     protected $hidden = [

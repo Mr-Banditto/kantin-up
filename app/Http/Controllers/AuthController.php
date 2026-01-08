@@ -28,8 +28,8 @@ class AuthController extends Controller
                 return redirect()->intended('/admin/dashboard');
             } elseif ($role == 'penjual') {
                 return redirect()->intended('/penjual/dashboard');
-            } else {
-                return redirect()->intended('/user/home');
+            } elseif ($role == 'user') {
+                return redirect()->route('user.dashboard');
             }
         }
 

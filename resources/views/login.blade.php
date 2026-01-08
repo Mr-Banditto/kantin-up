@@ -74,7 +74,8 @@
         </div>
 
         <div class="login-footer">
-            <a href="#">FORGOT PASSWORD?</a>
+            <!-- Sekarang link ini akan mengarah ke halaman Forgot Password yang baru kita buat -->
+            <a href="{{ route('password.request') }}">FORGOT PASSWORD?</a>
         </div>
     </div>
 

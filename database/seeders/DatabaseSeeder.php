@@ -36,5 +36,31 @@ class DatabaseSeeder extends Seeder
         'password' => bcrypt('password123'),
         'role' => 'penjual'
         ]);
+
+        $kantins = [
+            ['nama' => 'Kantin Biru', 'desc' => 'Spesialis Ayam Penyet & Sambal'],
+            ['nama' => 'D’Geprek', 'desc' => 'Ayam Geprek Level Mahasiswa'],
+            ['nama' => 'Kantin Sehat', 'desc' => 'Makanan Rumahan & Sayur Segar'],
+            ['nama' => 'Kedai Kopi UP', 'desc' => 'Kopi dan Cemilan Tugas'],
+        ];
+
+        foreach ($kantins as $k) {
+            $vendor = \App\Models\Vendor::create([
+                'nama_kantin' => $k['nama'],
+                'deskripsi' => $k['desc'],
+                'is_open' => true,
+            ]);
+
+            // Buat 3 Menu per Kantin
+            for ($i = 1; $i <= 3; $i++) {
+                \App\Models\Menu::create([
+                    'vendor_id' => $vendor->id,
+                    'nama_makanan' => $k['nama'] . " Menu " . $i,
+                    'harga' => rand(10000, 25000),
+                    'deskripsi' => 'Deskripsi lezat untuk menu ini yang sangat menggugah selera.',
+                    'tersedia' => true,
+              ]);
+            }
+        }
     }
 }

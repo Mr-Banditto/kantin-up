@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Memaksa variabel menus ada di mana-mana untuk sementara
+        view()->share('menus', []); 
+        view()->share('vendors', []);
     }
 }

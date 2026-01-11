@@ -29,6 +29,19 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 // --- GROUP PENJUAL ---
-Route::middleware(['auth', 'role:penjual'])->group(function () {
-    Route::get('/penjual/dashboard', function () { return view('penjual.dashboard'); })->name('penjual.dashboard');
+Route::middleware(['auth', 'role:penjual'])->prefix('penjual')->name('penjual.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Penjual\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\Penjual\DashboardController::class, 'index'])->name('dashboard');
+    
+    // Kelola Menu (penjual hanya boleh mengelola menu miliknya)
+    Route::resource('menus', \App\Http\Controllers\Penjual\MenuController::class);
+    
+    // Pesanan Masuk
+    Route::get('/orders', [\App\Http\Controllers\Penjual\OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [\App\Http\Controllers\Penjual\OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{id}/update-status', [\App\Http\Controllers\Penjual\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    
+    // Saldo & Riwayat Pesanan
+    Route::get('/saldo', [\App\Http\Controllers\Penjual\SaldoController::class, 'index'])->name('saldo.index');
+    Route::get('/saldo/{id}/detail', [\App\Http\Controllers\Penjual\SaldoController::class, 'detail'])->name('saldo.detail');
 });

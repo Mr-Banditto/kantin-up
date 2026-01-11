@@ -10,8 +10,14 @@ class DatabaseSeeder extends Seeder
 {
     public function run()
     {
+        // Disable foreign key checks to allow truncate
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
         // Hapus data lama jika ada
-        User::truncate(); 
+        User::truncate();
+        \App\Models\Vendor::truncate();
+        \App\Models\Menu::truncate();
+        \App\Models\Order::truncate(); 
 
         // Buat user dummy
         User::create([
@@ -30,11 +36,12 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Buat User Penjual (Pastikan baris ini ada!)
-        \App\Models\User::create([
+        $penjual = \App\Models\User::create([
         'name' => 'penjual_up',
         'email' => 'penjual@gmail.com',
         'password' => bcrypt('password123'),
-        'role' => 'penjual'
+        'role' => 'penjual',
+        'vendor_id' => 1  // Assign to first vendor (Kantin Biru)
         ]);
 
         $kantins = [
@@ -62,5 +69,22 @@ class DatabaseSeeder extends Seeder
               ]);
             }
         }
-    }
+
+        // Buat beberapa order untuk testing
+        $statuses = ['menunggu', 'dimasak', 'siap', 'selesai'];
+        $queueNumbers = ['A-001', 'A-002', 'B-001', 'B-002', 'C-001'];
+
+        for ($i = 0; $i < 5; $i++) {
+            \App\Models\Order::create([
+                'user_id' => 1,  // mahasiswa_up
+                'vendor_id' => 1,  // Kantin Biru (penjual_up)
+                'nomor_antrean' => $queueNumbers[$i],
+                'total_harga' => rand(15000, 35000),
+                'status' => $statuses[$i % count($statuses)],
+                'estimasi_menit' => rand(10, 30),
+            ]);
+        }
+
+        // Re-enable foreign key checks
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');    }
 }

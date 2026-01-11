@@ -17,7 +17,13 @@ class User extends Authenticatable
         'password',
         'role', // PASTIKAN ADA INI
         'balance',
+        'vendor_id',
         ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(\App\Models\Vendor::class);
+    }
 
     protected $hidden = [
         'password',

@@ -50,10 +50,10 @@
         <div class="logo-section">
             <img src="https://sso.universitaspertamina.ac.id/images/logo.png" alt="Logo Universitas Pertamina">
         </div>
-        <a href="#" class="menu-item active"><i class="fa fa-th-large"></i> Dashboard</a>
-        <a href="#" class="menu-item"><i class="fa fa-utensils"></i> Kelola Menu</a>
-        <a href="#" class="menu-item"><i class="fa fa-shopping-basket"></i> Pesanan Masuk</a>
-        <a href="#" class="menu-item"><i class="fa fa-wallet"></i> Saldo Lapak</a>
+        <a href="{{ url('/penjual') }}" class="menu-item {{ Request::is('penjual') ? 'active' : '' }}"><i class="fa fa-th-large"></i> Dashboard</a>
+        <a href="{{ url('/penjual/menus') }}" class="menu-item {{ Request::is('penjual/menus*') ? 'active' : '' }}"><i class="fa fa-utensils"></i> Kelola Menu</a>
+        <a href="{{ url('/penjual/orders') }}" class="menu-item {{ Request::is('penjual/orders*') ? 'active' : '' }}"><i class="fa fa-shopping-basket"></i> Pesanan Masuk</a>
+        <a href="{{ url('/penjual/saldo') }}" class="menu-item {{ Request::is('penjual/saldo*') ? 'active' : '' }}"><i class="fa fa-wallet"></i> Saldo Lapak</a>
         
         <form action="{{ route('logout') }}" method="POST" style="margin-top: auto;">
             @csrf
@@ -75,39 +75,8 @@
             </div>
         </div>
 
-        <div class="status-banner">
-            <h3 style="margin:0">Toko Anda Sedang <span style="background:#fff; color:var(--primary); padding:2px 10px; border-radius:5px">BUKA</span></h3>
-            <p style="margin:10px 0 0 0">Ada 3 pesanan baru yang perlu Anda proses sekarang.</p>
-            <i class="fa fa-store bg-icon"></i>
-        </div>
+        @yield('content')
+    </div>
 
-        <h3 style="margin-bottom:20px">Ringkasan Peforma</h3>
-        <div class="stats-grid">
-            <!-- Menunggu -->
-            <div class="stat-card">
-                <i class="fa fa-clock-rotate-left fa-2x" style="color:#f39c12"></i>
-                <h2>3</h2>
-                <p>Menunggu</p>
-            </div>
-            
-            <!-- Sedang Dimasak -->
-            <div class="stat-card">
-                <i class="fa fa-fire fa-2x" style="color:#e67e22"></i>
-                <h2>2</h2>
-                <p>Sedang Dimasak</p>
-            </div>
-            
-            <!-- Selesai Hari Ini -->
-            <div class="stat-card">
-                <i class="fa fa-check-double fa-2x" style="color:#27ae60"></i>
-                <h2>45</h2>
-                <p>Selesai Hari Ini</p>
-            </div>
-            
-            <!-- Menu Aktif (Ikon diganti ke fa-utensils agar pasti muncul) -->
-            <div class="stat-card">
-                <i class="fa fa-utensils fa-2x" style="color:#0047ba"></i>
-                <h2>12</h2>
-                <p>Menu Aktif</p>
-            </div>
-        </div>
+</body>
+</html>

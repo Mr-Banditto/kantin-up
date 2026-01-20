@@ -100,8 +100,15 @@
             </div>
         @endif
         <div class="vendor-cover" style="position: relative;">
+            @php
+                $filename = \Illuminate\Support\Str::slug($vendor->nama_kantin) . '.jpg';
+                $manualPath = 'img/' . $filename;
+            @endphp
+
             @if($vendor->foto)
                  <img src="{{ asset('storage/'.$vendor->foto) }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+            @elseif(file_exists(public_path($manualPath)))
+                 <img src="{{ asset($manualPath) }}" alt="" style="width:100%; height:100%; object-fit:cover;">
             @else
                  <img src="https://loremflickr.com/800/300/restaurant,kitchen?lock={{ $vendor->id }}" alt="" style="width:100%; height:100%; object-fit:cover;">
             @endif
@@ -136,12 +143,19 @@
         <div class="menu-grid">
             @foreach($menus as $menu)
             @php
-                // Keywords makanan mahasiswa Indonesia
-                $foodKeywords = ['fried chicken', 'nasi goreng', 'noodles', 'meatball', 'soto', 'satay', 'rice', 'spicy chicken', 'soup', 'martabak'];
-                $keyword = $foodKeywords[$menu->id % count($foodKeywords)];
+                 $filename = \Illuminate\Support\Str::slug($menu->nama_makanan) . '.jpg';
+                 $manualPath = 'img/menus/' . $filename;
+                 
+                 if($menu->foto) {
+                     $bgImage = asset('storage/' . $menu->foto);
+                 } elseif(file_exists(public_path($manualPath))) {
+                     $bgImage = asset($manualPath);
+                 } else {
+                     $bgImage = 'https://loremflickr.com/400/300/food?lock=' . $menu->id;
+                 }
             @endphp
             <div class="menu-card">
-                <div class="menu-img" style="background-image: url('{{ $menu->foto ? asset('storage/'.$menu->foto) : 'https://loremflickr.com/400/300/' . $keyword . '?lock='.$menu->id }}')"></div>
+                <div class="menu-img" style="background-image: url('{{ $bgImage }}')"></div>
                 <div class="menu-body">
                     <div class="menu-title">{{ $menu->nama_makanan }}</div>
                     <div class="menu-price">Rp {{ number_format($menu->harga, 0, ',', '.') }}</div>

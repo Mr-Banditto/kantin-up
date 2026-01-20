@@ -167,12 +167,19 @@
         <div class="menu-slider">
             @foreach($menus as $menu)
             @php
-                // Keywords makanan mahasiswa Indonesia
-                $foodKeywords = ['fried chicken', 'nasi goreng', 'noodles', 'meatball', 'soto', 'satay', 'rice', 'spicy chicken', 'soup', 'martabak'];
-                $keyword = $foodKeywords[$menu->id % count($foodKeywords)];
+                 $filename = \Illuminate\Support\Str::slug($menu->nama_makanan) . '.jpg';
+                 $manualPath = 'img/menus/' . $filename;
+                 
+                 if($menu->foto) {
+                     $bgImage = asset('storage/' . $menu->foto);
+                 } elseif(file_exists(public_path($manualPath))) {
+                     $bgImage = asset($manualPath);
+                 } else {
+                     $bgImage = 'https://loremflickr.com/400/300/food?lock=' . $menu->id;
+                 }
             @endphp
             <div class="menu-card-item">
-                <div class="menu-thumb" style="background-image: url('{{ $menu->foto ? asset('storage/'.$menu->foto) : 'https://loremflickr.com/400/300/' . $keyword . '?lock='.$menu->id }}')"></div>
+                <div class="menu-thumb" style="background-image: url('{{ $bgImage }}')"></div>
                 <div class="menu-details">
                     <h4>{{ $menu->nama_makanan }}</h4>
                     <span><i class="fa fa-store"></i> {{ $menu->vendor->nama_kantin ?? 'Kantin' }}</span>
@@ -196,8 +203,20 @@
         <!-- Daftar Kantin -->
         <div class="canteen-grid">
             @foreach($vendors as $v)
+            @php
+                $filename = \Illuminate\Support\Str::slug($v->nama_kantin) . '.jpg';
+                $manualPath = 'img/' . $filename;
+                
+                if($v->foto) {
+                    $bgImage = asset('storage/' . $v->foto);
+                } elseif(file_exists(public_path($manualPath))) {
+                    $bgImage = asset($manualPath);
+                } else {
+                    $bgImage = 'https://loremflickr.com/400/200/restaurant,kitchen?lock=' . $v->id;
+                }
+            @endphp
             <div class="canteen-card" onclick="location.href='{{ route('user.kantin', $v->id) }}'">
-                <div class="canteen-img" style="background-image: url('https://loremflickr.com/400/200/restaurant,kitchen?lock={{ $v->id }}')"></div>
+                <div class="canteen-img" style="background-image: url('{{ $bgImage }}')"></div>
                 <div class="canteen-info">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <span class="badge-open">{{ $v->is_open ? 'BUKA' : 'TUTUP' }}</span>

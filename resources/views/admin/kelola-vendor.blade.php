@@ -381,13 +381,31 @@
 
         <div class="vendor-grid">
             @foreach($vendors as $vendor)
+            @php
+                $filename = \Illuminate\Support\Str::slug($vendor->nama_kantin) . '.jpg';
+                $manualPath = 'img/' . $filename;
+                
+                if($vendor->foto) {
+                    $bgImage = asset('storage/' . $vendor->foto);
+                } elseif(file_exists(public_path($manualPath))) {
+                    $bgImage = asset($manualPath);
+                } else {
+                    $bgImage = 'https://loremflickr.com/400/200/restaurant,kitchen?lock=' . $vendor->id;
+                }
+            @endphp
             <div class="vendor-card-container" onclick="openVendorModal({{ $vendor->id }}, '{{ $vendor->nama_kantin }}', '{{ $vendor->deskripsi }}', {{ $vendor->is_open ? 'true' : 'false' }})">
-                <div class="vendor-card-header" style="background-image: url('https://loremflickr.com/400/200/restaurant,kitchen?lock={{ $vendor->id }}'); background-size: cover; background-position: center; position: relative;">
+                <div class="vendor-card-header" style="background-image: url('{{ $bgImage }}'); background-size: cover; background-position: center; position: relative;">
                     <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 1;"></div>
                     <div style="position: relative; z-index: 2; display: flex; align-items: center; gap: 15px; width: 100%;">
-                        <div class="vendor-avatar">
-                            <i class="fa fa-utensils"></i>
-                        </div>
+                        @if($vendor->foto || file_exists(public_path($manualPath)))
+                            <div class="vendor-avatar" style="overflow:hidden; padding:0; background:white;">
+                                <img src="{{ $bgImage }}" style="width:100%; height:100%; object-fit:cover;">
+                            </div>
+                        @else
+                            <div class="vendor-avatar">
+                                <i class="fa fa-utensils"></i>
+                            </div>
+                        @endif
                         <div class="vendor-title-section">
                             <h3 style="text-shadow: 0 2px 4px rgba(0,0,0,0.6);">{{ $vendor->nama_kantin }}</h3>
                             <p style="text-shadow: 0 1px 2px rgba(0,0,0,0.6);">Penjual: {{ $vendor->user ? $vendor->user->name : 'N/A' }}</p>

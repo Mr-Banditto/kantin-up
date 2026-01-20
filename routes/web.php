@@ -17,10 +17,17 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/user/home', [UserController::class, 'index'])->name('user.dashboard');
     Route::get('/user/kantin/{id}', [UserController::class, 'detail'])->name('user.kantin');
     
-    // Route Pelengkap Sidebar agar tidak error
-    Route::get('/user/favorit', function() { return "Halaman Favorit"; })->name('user.favorit');
-    Route::get('/user/riwayat', function() { return "Halaman Riwayat"; })->name('user.history');
-    Route::get('/user/wallet', function() { return "Halaman Digital Wallet"; })->name('user.wallet');
+    // Fitur Favorit
+    Route::get('/user/favorit', [UserController::class, 'favorit'])->name('user.favorit');
+    Route::post('/user/toggle-favorite', [UserController::class, 'toggleFavorite'])->name('user.toggle-favorite');
+
+    // Route Pesanan
+    Route::get('/user/riwayat', [App\Http\Controllers\KantinController::class, 'pesanan'])->name('user.history');
+    Route::post('/user/pesan', [App\Http\Controllers\KantinController::class, 'pesan'])->name('user.pesan'); 
+    
+    // Fitur Wallet
+    Route::get('/user/wallet', [UserController::class, 'wallet'])->name('user.wallet');
+    Route::post('/user/top-up', [UserController::class, 'topUp'])->name('user.top-up');
 });
 
 // --- GROUP ADMIN ---

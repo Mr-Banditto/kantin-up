@@ -382,13 +382,16 @@
         <div class="vendor-grid">
             @foreach($vendors as $vendor)
             <div class="vendor-card-container" onclick="openVendorModal({{ $vendor->id }}, '{{ $vendor->nama_kantin }}', '{{ $vendor->deskripsi }}', {{ $vendor->is_open ? 'true' : 'false' }})">
-                <div class="vendor-card-header">
-                    <div class="vendor-avatar">
-                        <i class="fa fa-utensils"></i>
-                    </div>
-                    <div class="vendor-title-section">
-                        <h3>{{ $vendor->nama_kantin }}</h3>
-                        <p>Penjual: {{ $vendor->user ? $vendor->user->name : 'N/A' }}</p>
+                <div class="vendor-card-header" style="background-image: url('https://loremflickr.com/400/200/restaurant,kitchen?lock={{ $vendor->id }}'); background-size: cover; background-position: center; position: relative;">
+                    <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 1;"></div>
+                    <div style="position: relative; z-index: 2; display: flex; align-items: center; gap: 15px; width: 100%;">
+                        <div class="vendor-avatar">
+                            <i class="fa fa-utensils"></i>
+                        </div>
+                        <div class="vendor-title-section">
+                            <h3 style="text-shadow: 0 2px 4px rgba(0,0,0,0.6);">{{ $vendor->nama_kantin }}</h3>
+                            <p style="text-shadow: 0 1px 2px rgba(0,0,0,0.6);">Penjual: {{ $vendor->user ? $vendor->user->name : 'N/A' }}</p>
+                        </div>
                     </div>
                 </div>
 

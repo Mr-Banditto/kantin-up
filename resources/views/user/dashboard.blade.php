@@ -131,14 +131,6 @@
             </form>
         </div>
     </div>
-        
-        <div style="position: absolute; bottom: 30px; width: 220px;">
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn-logout"><i class="fa fa-sign-out-alt"></i> Keluar Sistem</button>
-            </form>
-        </div>
-    </div>
 
     <div class="main-content">
         <div class="header">
@@ -174,14 +166,21 @@
 
         <div class="menu-slider">
             @foreach($menus as $menu)
+            @php
+                // Keywords makanan mahasiswa Indonesia
+                $foodKeywords = ['fried chicken', 'nasi goreng', 'noodles', 'meatball', 'soto', 'satay', 'rice', 'spicy chicken', 'soup', 'martabak'];
+                $keyword = $foodKeywords[$menu->id % count($foodKeywords)];
+            @endphp
             <div class="menu-card-item">
-                <div class="menu-thumb" style="background-image: url('{{ $menu->foto }}')"></div>
+                <div class="menu-thumb" style="background-image: url('{{ $menu->foto ? asset('storage/'.$menu->foto) : 'https://loremflickr.com/400/300/' . $keyword . '?lock='.$menu->id }}')"></div>
                 <div class="menu-details">
-                    <h4>{{ $menu->nama }}</h4>
-                    <span><i class="fa fa-store"></i> {{ $menu->toko }}</span>
+                    <h4>{{ $menu->nama_makanan }}</h4>
+                    <span><i class="fa fa-store"></i> {{ $menu->vendor->nama_kantin ?? 'Kantin' }}</span>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="price">Rp {{ number_format($menu->harga, 0, ',', '.') }}</div>
-                        <i class="fa fa-plus-circle" style="color: #0047ba; font-size: 20px;"></i>
+                        <button style="background: none; border: none; cursor: pointer;" onclick="openModal('{{ $menu->id }}', '{{ $menu->nama_makanan }}', {{ $menu->harga }})">
+                            <i class="fa fa-plus-circle" style="color: #0047ba; font-size: 24px;"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -198,7 +197,7 @@
         <div class="canteen-grid">
             @foreach($vendors as $v)
             <div class="canteen-card" onclick="location.href='{{ route('user.kantin', $v->id) }}'">
-                <div class="canteen-img" style="background-image: url('https://via.placeholder.com/400x200?text={{ $v->nama_kantin }}')"></div>
+                <div class="canteen-img" style="background-image: url('https://loremflickr.com/400/200/restaurant,kitchen?lock={{ $v->id }}')"></div>
                 <div class="canteen-info">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <span class="badge-open">{{ $v->is_open ? 'BUKA' : 'TUTUP' }}</span>
@@ -216,6 +215,129 @@
             @endforeach
         </div>
     </div>
+
+    <!-- Modal Pemesanan (Copied from detail_kantin) -->
+    <div id="orderModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;">
+        <div class="modal-content" style="background: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 450px;">
+            <div id="stepOrder">
+                <h3 id="modalMenuName" style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0;">Nama Menu</h3>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <p style="margin: 0; color: #666; font-size: 13px;">Harga Satuan</p>
+                    <p id="modalMenuPrice" style="color: var(--primary); font-weight: bold; margin: 0; font-size: 18px;">Rp 0</p>
+                </div>
+                
+                <form action="{{ route('user.pesan') }}" method="POST" id="orderForm">
+                    @csrf
+                    <input type="hidden" name="menu_id" id="modalMenuId">
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600;">Jumlah Porsi</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button type="button" onclick="adjustQty(-1)" style="width: 40px; height: 40px; border: 1px solid #ddd; background: white; border-radius: 8px; font-size: 18px;">-</button>
+                            <input type="number" name="jumlah" id="qtyInput" value="1" min="1" max="100" style="flex: 1; height: 40px; text-align: center; border: 1px solid #ddd; border-radius: 8px; font-weight: bold;" oninput="updateTotal()">
+                            <button type="button" onclick="adjustQty(1)" style="width: 40px; height: 40px; border: 1px solid #ddd; background: white; border-radius: 8px; font-size: 18px;">+</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold;">
+                        <span>Total Pembayaran:</span>
+                        <span id="grandTotal" style="color: var(--primary); font-size: 20px;">Rp 0</span>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="closeModal()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Batal</button>
+                        <button type="button" onclick="showQris()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            <i class="fa fa-qrcode"></i> Bayar & Pesan
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 2: QRIS -->
+            <div id="stepQris" style="display: none; text-align: center;">
+                <h3 style="margin-top: 0;">Scan QRIS untuk Bayar</h3>
+                <p style="color: #666; font-size: 13px;">Silakan scan QR Code di bawah ini menggunakan aplikasi e-wallet Anda.</p>
+                
+                <div style="background: white; padding: 20px; border: 2px dashed #ddd; border-radius: 15px; display: inline-block; margin: 10px 0;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QRIS" style="width: 200px; height: 200px;">
+                    <p style="margin: 10px 0 0 0; font-weight: bold;">SIUP PAY</p>
+                </div>
+
+                <p id="qrisTotal" style="font-size: 20px; font-weight: bold; color: var(--primary); margin: 10px 0;">Rp 0</p>
+
+                <button type="button" onclick="submitOrder()" style="width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px;">
+                    <i class="fa fa-check-circle"></i> Saya Sudah Bayar
+                </button>
+                <button type="button" onclick="backToOrder()" style="margin-top: 10px; background: none; border: none; color: #888; cursor: pointer; text-decoration: underline;">Kembali ke pesanan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPrice = 0;
+
+        function openModal(id, name, price) {
+            document.getElementById('orderModal').style.display = 'flex';
+            document.getElementById('stepOrder').style.display = 'block';
+            document.getElementById('stepQris').style.display = 'none';
+            
+            document.getElementById('modalMenuId').value = id;
+            document.getElementById('modalMenuName').innerText = name;
+            document.getElementById('modalMenuPrice').innerText = formatRupiah(price);
+            
+            document.getElementById('qtyInput').value = 1;
+            currentPrice = price;
+            updateTotal();
+        }
+        
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+        
+        function adjustQty(change) {
+            const input = document.getElementById('qtyInput');
+            let newVal = parseInt(input.value) + change;
+            if(newVal < 1) newVal = 1;
+            if(newVal > 100) newVal = 100;
+            input.value = newVal;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const qty = parseInt(document.getElementById('qtyInput').value);
+            const total = qty * currentPrice;
+            document.getElementById('grandTotal').innerText = formatRupiah(total);
+            document.getElementById('qrisTotal').innerText = formatRupiah(total);
+        }
+
+        function showQris() {
+            document.getElementById('stepOrder').style.display = 'none';
+            document.getElementById('stepQris').style.display = 'block';
+        }
+
+        function backToOrder() {
+            document.getElementById('stepOrder').style.display = 'block';
+            document.getElementById('stepQris').style.display = 'none';
+        }
+
+        function submitOrder() {
+            const btn = event.target;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...';
+            btn.disabled = true;
+            setTimeout(() => { document.getElementById('orderForm').submit(); }, 1500);
+        }
+
+        function formatRupiah(num) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('orderModal')) {
+                closeModal();
+            }
+        }
+    </script>
 
 </body>
 </html>

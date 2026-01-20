@@ -85,8 +85,8 @@ class AdminController extends Controller
         ->get();
 
         $monthlySales = Order::select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('YEAR(created_at) as year'),
+            DB::raw("strftime('%m', created_at) as month"),
+            DB::raw("strftime('%Y', created_at) as year"),
             DB::raw('SUM(total_harga) as total')
         )
         ->where('vendor_id', $vendor->id)
@@ -129,8 +129,8 @@ class AdminController extends Controller
 
         // Data untuk grafik bulanan
         $monthlySales = Order::select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('YEAR(created_at) as year'),
+            DB::raw("strftime('%m', created_at) as month"),
+            DB::raw("strftime('%Y', created_at) as year"),
             DB::raw('SUM(total_harga) as total')
         )
         ->where('status', 'selesai')

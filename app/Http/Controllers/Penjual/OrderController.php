@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Penjual;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
@@ -73,6 +74,9 @@ class OrderController extends Controller
 
         $order->status = $request->status;
         $order->save();
+
+        // Log Aktivitas
+        ActivityLog::log('update_status_pesanan', "Penjual memperbarui status pesanan #{$order->id} menjadi " . ucfirst($request->status));
 
         return back()->with('success', 'Status pesanan berhasil diperbarui menjadi ' . ucfirst($request->status));
     }

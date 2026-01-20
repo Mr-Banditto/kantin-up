@@ -13,9 +13,18 @@ return new class extends Migration
     Schema::create('orders', function (Blueprint $table) {
         $table->id();
         $table->foreignId('user_id')->constrained();
+        $table->string('nama_pembeli')->nullable();
         $table->foreignId('vendor_id')->constrained();
-        $table->string('nomor_antrean'); // Contoh: A-001
+        
+        // Item Details
+        $table->foreignId('menu_id')->nullable()->constrained()->onDelete('set null');
+        $table->string('menu_name');
+        $table->integer('jumlah');
+        $table->integer('harga_satuan');
         $table->integer('total_harga');
+        
+        // Order Info
+        $table->string('nomor_antrean')->nullable(); 
         $table->enum('status', ['menunggu', 'dimasak', 'siap', 'selesai', 'dibatalkan'])->default('menunggu');
         $table->integer('estimasi_menit')->default(15);
         $table->timestamps();

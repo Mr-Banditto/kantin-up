@@ -11,7 +11,8 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         // Disable foreign key checks to allow truncate
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        // \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         
         // Hapus data lama jika ada
         User::truncate();
@@ -24,7 +25,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'mahasiswa_up', // Ini yang akan diketik di kolom Username
             'email' => 'user@gmail.com',
             'password' => Hash::make('password123'), // Ini passwordnya
-            'role' => 'user'
+            'role' => 'user',
+            'balance' => 500000 // Saldo awal Rp 500.000
         ]);
         
         // Tambahkan admin untuk tes nanti
@@ -76,19 +78,26 @@ class DatabaseSeeder extends Seeder
 
         for ($i = 0; $i < 5; $i++) {
             $menu = \App\Models\Menu::where('vendor_id', 1)->first();
+            $jumlah = rand(1, 3);
+            $harga = $menu ? $menu->harga : 15000;
+            
             \App\Models\Order::create([
                 'user_id' => 1,  // mahasiswa_up
+                'nama_pembeli' => 'mahasiswa_up',
                 'vendor_id' => 1,  // Kantin Biru (penjual_up)
                 'menu_id' => $menu ? $menu->id : null,
                 'menu_name' => $menu ? $menu->nama_makanan : 'Menu Sample',
-                'jumlah' => rand(1, 3),
+                'jumlah' => $jumlah,
+                'harga_satuan' => $harga,
                 'nomor_antrean' => $queueNumbers[$i],
-                'total_harga' => rand(15000, 35000),
+                'total_harga' => $jumlah * $harga,
                 'status' => $statuses[$i % count($statuses)],
                 'estimasi_menit' => rand(10, 30),
             ]);
         }
 
         // Re-enable foreign key checks
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');    }
+        // \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+    }
 }

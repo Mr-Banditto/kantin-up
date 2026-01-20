@@ -4,39 +4,97 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Vendor;
+use App\Models\Menu;
+use App\Models\Favorite;
+use App\Models\Order;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    /**
+     * Tampilkan halaman Home user (Daftar Kantin)
+     */
     public function index()
     {
-        // 1. Ambil data vendor dari DB (jika kosong, buat dummy agar tidak error)
-        $vendors = Vendor::all();
-        if($vendors->isEmpty()){
-            $vendors = [
-                (object)['id' => 1, 'nama_kantin' => 'Kantin Biru', 'deskripsi' => 'Ayam Penyet & Bakar', 'foto' => '', 'is_open' => true],
-                (object)['id' => 2, 'nama_kantin' => 'D\'Geprek UP', 'deskripsi' => 'Ayam Geprek Pedas', 'foto' => '', 'is_open' => true],
-            ];
-        }
+        // 1. Ambil data vendor REAL dari database agar sinkron dengan Admin & Penjual
+        // Hanya vendor yang statusnya BUKA (is_open = true)
+        $vendors = Vendor::where('is_open', true)->get();
 
-        // 2. Data Menu Slider
-        $menus = [
-            (object)['id' => 1, 'nama' => 'Ayam Penyet', 'harga' => 15000, 'toko' => 'Kantin Biru', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 2, 'nama' => 'Ayam Bakar', 'harga' => 17000, 'toko' => 'Kantin Biru', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 3, 'nama' => 'Ayam Geprek Ori', 'harga' => 13000, 'toko' => 'D\'Geprek UP', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 4, 'nama' => 'Geprek Keju', 'harga' => 16000, 'toko' => 'D\'Geprek UP', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 5, 'nama' => 'Soto Ayam', 'harga' => 12000, 'toko' => 'Soto Seger', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 6, 'nama' => 'Soto Daging', 'harga' => 15000, 'toko' => 'Soto Seger', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 7, 'nama' => 'Es Kopi Susu', 'harga' => 10000, 'toko' => 'Kopi Kampus', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 8, 'nama' => 'Roti Bakar', 'harga' => 12000, 'toko' => 'Kopi Kampus', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 9, 'nama' => 'Nasi Goreng', 'harga' => 15000, 'toko' => 'Warung Barokah', 'foto' => 'https://bit.ly/3Z9vG4W'],
-            (object)['id' => 10, 'nama' => 'Mie Ayam', 'harga' => 12000, 'toko' => 'Mie Gajah', 'foto' => 'https://bit.ly/3Z9vG4W'],
-        ];
+        // 2. Ambil data Menu REAL (bukan dummy array) untuk Slider
+        // Ambil menu yang tersedia, beserta relasi vendornya
+        $menus = Menu::where('tersedia', true)
+                     ->with('vendor') 
+                     ->latest()
+                     ->take(8)
+                     ->get();
 
-        return view('user.dashboard', compact('menus', 'vendors'));
+        return view('user.dashboard', compact('vendors', 'menus'));
     }
 
+    /**
+     * Detail Kantin (Menu List)
+     */
     public function detail($id)
     {
-        return "Detail Kantin ID: " . $id;
+        $vendor = Vendor::with('menus')->findOrFail($id);
+        $menus = $vendor->menus()->where('tersedia', true)->get();
+        // Cek apakah user sudah memfavoritkan kantin ini
+        $isFavorite = Favorite::where('user_id', Auth::id())
+                              ->where('vendor_id', $id)
+                              ->exists();
+
+        return view('user.detail_kantin', compact('vendor', 'menus', 'isFavorite'));
+    }
+
+    public function favorit()
+    {
+        $favorites = Favorite::where('user_id', Auth::id())->with('vendor')->get();
+        return view('user.favorit', compact('favorites'));
+    }
+
+    public function toggleFavorite(Request $request)
+    {
+        $request->validate(['vendor_id' => 'required|exists:vendors,id']);
+        
+        $fav = Favorite::where('user_id', Auth::id())
+                       ->where('vendor_id', $request->vendor_id)
+                       ->first();
+
+        if ($fav) {
+            $fav->delete();
+            return back()->with('success', 'Dihapus dari favorit.');
+        } else {
+            Favorite::create([
+                'user_id' => Auth::id(),
+                'vendor_id' => $request->vendor_id
+            ]);
+            return back()->with('success', 'Ditambahkan ke favorit.');
+        }
+    }
+
+    public function wallet()
+    {
+        $user = Auth::user();
+        // History transaksi (topup manual vs pembelian)
+        // Kita gunakan data orders sebagai pengeluaran
+        $expenses = Order::where('user_id', $user->id)
+                         ->orderBy('created_at', 'desc')
+                         ->get();
+
+        return view('user.wallet', compact('user', 'expenses'));
+    }
+
+    public function topUp(Request $request)
+    {
+        $request->validate(['amount' => 'required|integer|min:10000']);
+        
+        $user = Auth::user();
+        $user->balance += $request->amount;
+        $user->save();
+
+        ActivityLog::log('top_up', "User melakukan Top Up sebesar Rp " . number_format($request->amount));
+
+        return back()->with('success', 'Top Up berhasil! Saldo bertambah.');
     }
 }

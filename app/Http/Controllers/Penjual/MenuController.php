@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Penjual;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Menu;
+use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -65,6 +66,10 @@ class MenuController extends Controller
         $data['vendor_id'] = $vendorId;
 
         Menu::create($data);
+
+        // Catat di log aktivitas
+        ActivityLog::log('tambah_menu', "Penjual menambahkan menu baru: {$data['nama_makanan']}");
+
         return redirect('/penjual/menus')->with('success', 'Menu berhasil ditambahkan.');
     }
 
@@ -105,6 +110,10 @@ class MenuController extends Controller
         $data['tersedia'] = $request->has('tersedia') ? 1 : 0;
 
         $menu->update($data);
+
+        // Catat di log aktivitas
+        ActivityLog::log('update_menu', "Penjual memperbarui menu: {$menu->nama_makanan}");
+
         return redirect('/penjual/menus')->with('success', 'Menu berhasil diperbarui.');
     }
 
@@ -116,7 +125,13 @@ class MenuController extends Controller
         if ($menu->foto) {
             Storage::disk('public')->delete($menu->foto);
         }
+
+        $menuName = $menu->nama_makanan;
         $menu->delete();
+
+        // Catat di log aktivitas
+        ActivityLog::log('hapus_menu', "Penjual menghapus menu: {$menuName}");
+
         return redirect('/penjual/menus')->with('success', 'Menu berhasil dihapus.');
     }
 }

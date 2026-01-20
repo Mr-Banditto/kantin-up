@@ -72,7 +72,7 @@ class AdminController extends Controller
     {
         $vendor->load('user', 'menus', 'orders');
 
-        // Data penjualan untuk grafik
+        // Data penjualan untuk grafik mingguan
         $weeklySales = Order::select(
             DB::raw('DATE(created_at) as date'),
             DB::raw('SUM(total_harga) as total')
@@ -84,9 +84,21 @@ class AdminController extends Controller
         ->orderBy('date')
         ->get();
 
+        // --- LOGIKA PENDETEKSI DATABASE (AGAR BISA JALAN DI MYSQL & SQLITE) ---
+        $driver = DB::connection()->getDriverName();
+        
+        if ($driver == 'sqlite') {
+            $monthQuery = "strftime('%m', created_at)";
+            $yearQuery = "strftime('%Y', created_at)";
+        } else {
+            // Untuk MySQL / Laragon kamu
+            $monthQuery = "MONTH(created_at)";
+            $yearQuery = "YEAR(created_at)";
+        }
+
         $monthlySales = Order::select(
-            DB::raw("strftime('%m', created_at) as month"),
-            DB::raw("strftime('%Y', created_at) as year"),
+            DB::raw("$monthQuery as month"),
+            DB::raw("$yearQuery as year"),
             DB::raw('SUM(total_harga) as total')
         )
         ->where('vendor_id', $vendor->id)
@@ -96,6 +108,7 @@ class AdminController extends Controller
         ->orderBy('year')
         ->orderBy('month')
         ->get();
+        // ---------------------------------------------------------------------
 
         // Statistik vendor
         $totalMenu = $vendor->menus()->count();
@@ -104,10 +117,10 @@ class AdminController extends Controller
 
         // Pesanan terbaru
         $recentOrders = $vendor->orders()
-                              ->with('user')
-                              ->orderBy('created_at', 'desc')
-                              ->take(5)
-                              ->get();
+                            ->with('user')
+                            ->orderBy('created_at', 'desc')
+                            ->take(5)
+                            ->get();
 
         return view('admin.show-vendor', compact(
             'vendor',
@@ -124,20 +137,34 @@ class AdminController extends Controller
     {
         // Data transaksi untuk tabel
         $transactions = Order::with(['user', 'vendor'])
-                           ->orderBy('created_at', 'desc')
-                           ->paginate(20);
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(20);
+
+        // --- LOGIKA PENDETEKSI DATABASE (AGAR BISA JALAN DI MYSQL & SQLITE) ---
+        $driver = DB::connection()->getDriverName();
+        
+        if ($driver == 'sqlite') {
+            // Untuk teman kamu (SQLite)
+            $monthQuery = "strftime('%m', created_at)";
+            $yearQuery = "strftime('%Y', created_at)";
+        } else {
+            // Untuk kamu di Laragon (MySQL)
+            $monthQuery = "MONTH(created_at)";
+            $yearQuery = "YEAR(created_at)";
+        }
 
         // Data untuk grafik bulanan
         $monthlySales = Order::select(
-        DB::raw("strftime('%m', created_at) as month"),
-        DB::raw("strftime('%Y', created_at) as year"),
-        DB::raw('SUM(total_harga) as total')
-    )
-    ->where('status', 'selesai')
-    ->groupBy('month', 'year')
-    ->orderBy('year')
-    ->orderBy('month')
-    ->get();
+            DB::raw("$monthQuery as month"),
+            DB::raw("$yearQuery as year"),
+            DB::raw('SUM(total_harga) as total')
+        )
+        ->where('status', 'selesai')
+        ->groupBy('month', 'year')
+        ->orderBy('year', 'asc')
+        ->orderBy('month', 'asc')
+        ->get();
+        // ---------------------------------------------------------------------
 
         return view('admin.laporan-transaksi', compact('transactions', 'monthlySales'));
     }
